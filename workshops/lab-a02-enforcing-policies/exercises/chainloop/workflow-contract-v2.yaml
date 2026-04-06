@@ -1,0 +1,17 @@
+apiVersion: workflowcontract.chainloop.dev/v1
+kind: CraftingSchema
+metadata:
+  name: workshop-contract
+spec:
+  materials:
+    - type: CONTAINER_IMAGE
+      name: container-image
+      optional: false
+    - type: SBOM_CYCLONEDX_JSON
+      name: sbom
+      optional: false
+  policies:
+    - ref: file://chainloop/sbom-policy.rego
+      type: ATTESTATION
+      enforcement:
+        block: false

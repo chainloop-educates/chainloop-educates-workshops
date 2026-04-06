@@ -1,0 +1,31 @@
+apiVersion: training.educates.dev/v1beta1
+kind: TrainingPortal
+metadata:
+  name: labs-chainloop
+spec:
+  portal:
+    registration:
+      type: anonymous
+    updates:
+      workshop: true
+    sessions:
+      maximum: 5
+    workshop:
+      defaults:
+        reserved: 0
+  workshops:
+  - name: lab-a00-chainloop-cli
+    expires: 20m
+    overtime: 10m
+    deadline: 30m
+    orphaned: 5m
+  - name: lab-a01-getting-started-with-chainloop
+    expires: 75m
+    overtime: 10m
+    deadline: 90m
+    orphaned: 5m
+  - name: lab-a02-enforcing-policies
+    expires: 75m
+    overtime: 10m
+    deadline: 90m
+    orphaned: 5m

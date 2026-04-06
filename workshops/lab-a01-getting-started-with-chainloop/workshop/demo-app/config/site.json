@@ -1,0 +1,30 @@
+{
+  "title": "Chainloop Demo App",
+  "description": "Sample application for the Chainloop supply chain security workshops",
+  "homeUrl": "http://localhost:3000",
+  "authBeforeCatalog": false,
+  "betterAuth": {
+    "secret": "workshop-dev-secret-replace-in-production",
+    "baseURL": "http://localhost:3000"
+  },
+  "authProviders": {
+    "static": [
+      { "email": "learner@workshop.dev", "password": "chainloop", "name": "Workshop Learner" }
+    ]
+  },
+  "portals": [
+    {
+      "title": "Getting Started with Chainloop",
+      "description": "Learn the Chainloop CLI, create a workflow and contract, and run your first attestation.",
+      "workshopName": "lab-a01-getting-started-with-chainloop"
+    }
+  ],
+  "educates": {
+    "lookupServiceUrl": "https://lookup.example.educates.dev",
+    "tenantName": "default",
+    "credentials": {
+      "username": "tenant-user",
+      "password": "changeme"
+    }
+  }
+}

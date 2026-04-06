@@ -1,0 +1,39 @@
+# Chainloop Demo App — GitHub Actions Pipeline (A01 starting state)
+#
+# This workflow builds the container image and pushes it to the GitHub
+# Container Registry (ghcr.io). There is NO Chainloop integration yet.
+# Learners add Chainloop attestation during Workshop A01.
+
+name: Build
+
+on:
+  push:
+    branches: [main]
+
+env:
+  IMAGE_TAG: ghcr.io/${{ github.repository }}:${{ github.sha }}
+  IMAGE_LATEST: ghcr.io/${{ github.repository }}:latest
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_LATEST }}

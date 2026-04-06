@@ -1,0 +1,34 @@
+apiVersion: training.educates.dev/v1beta1
+kind: Workshop
+metadata:
+  name: lab-a00-chainloop-cli
+spec:
+  title: Installing and Configuring the Chainloop CLI
+  description: >-
+    Install the Chainloop CLI, point it at the in-cluster Chainloop control
+    plane, configure your API token, set up shell completion, and verify
+    end-to-end connectivity.
+  duration: 20m
+  difficulty: beginner
+  publish:
+    image: "$(image_repository)/lab-a00-chainloop-cli-files:$(workshop_version)"
+    files:
+    - directory:
+        path: .
+      includePaths:
+      - /workshop/**
+      - /exercises/**
+      - /README.md
+  workshop:
+    files:
+    - image:
+        url: "$(image_repository)/lab-a00-chainloop-cli-files:$(workshop_version)"
+  session:
+    namespaces:
+      security:
+        token:
+          enabled: true  # Required: learners use kubectl to read the token secret
+    applications:
+      terminal:
+        enabled: true
+        layout: split

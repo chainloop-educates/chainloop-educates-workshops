@@ -1,0 +1,7 @@
+schemaVersion: v1
+materials:
+  - type: CONTAINER_IMAGE
+    name: container-image
+    optional: false
+runner:
+  type: "GITLAB_PIPELINE"

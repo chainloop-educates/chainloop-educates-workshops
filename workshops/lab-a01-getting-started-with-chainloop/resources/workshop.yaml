@@ -1,0 +1,53 @@
+apiVersion: training.educates.dev/v1beta1
+kind: Workshop
+metadata:
+  name: lab-a01-getting-started-with-chainloop
+spec:
+  title: Getting Started with Chainloop
+  description: >-
+    Install the Chainloop CLI, create a workflow and contract, run your first
+    attestation manually, and integrate Chainloop attestation into a GitHub
+    Actions pipeline.
+  duration: 75m
+  difficulty: intermediate
+  publish:
+    image: "$(image_repository)/lab-a01-getting-started-with-chainloop-files:$(workshop_version)"
+    files:
+    - directory:
+        path: .
+      includePaths:
+      - /workshop/**
+      - /exercises/**
+      - /README.md
+      excludePaths:
+      - /workshop/demo-app/node_modules/**
+      - /workshop/demo-app/.next/**
+      - /workshop/demo-app/data/**
+  workshop:
+    files:
+    - image:
+        url: "$(image_repository)/lab-a01-getting-started-with-chainloop-files:$(workshop_version)"
+  session:
+    namespaces:
+      security:
+        token:
+          enabled: true  # Required: setup scripts use kubectl to read secrets
+    applications:
+      terminal:
+        enabled: true
+        layout: split
+      editor:
+        enabled: true
+    objects:
+      # GitHub PATs — used by 02-github-env.sh to create and populate the repo
+      # admin-pat: needs repo + delete_repo scopes on the chainloop-educates org
+      # user-pat:  needs repo scope (used by learners to push commits)
+      # For this PoC both can be the same PAT.
+      - kind: Secret
+        apiVersion: v1
+        metadata:
+          name: github-pats
+        type: Opaque
+        stringData:
+          admin-pat: "REPLACE_WITH_GITHUB_ADMIN_PAT"
+          user-pat: "REPLACE_WITH_GITHUB_USER_PAT"

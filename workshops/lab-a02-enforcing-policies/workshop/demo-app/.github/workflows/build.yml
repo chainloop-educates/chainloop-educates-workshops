@@ -1,0 +1,92 @@
+# Chainloop Demo App — GitHub Actions Pipeline (A02 starting state / A01 end-state)
+#
+# This workflow integrates Chainloop attestation around the container image build.
+# It is the starting point for Workshop A02 — learners add SBOM generation
+# and policy enforcement on top of this.
+#
+# Required secrets (set automatically by the workshop session setup):
+#   CHAINLOOP_TOKEN    — authenticates the Chainloop CLI
+#   CHAINLOOP_WORKFLOW — the workflow name scoped to the learner's session
+
+name: Build and Attest
+
+on:
+  push:
+    branches: [main]
+
+env:
+  IMAGE_TAG: ghcr.io/${{ github.repository }}:${{ github.sha }}
+  IMAGE_LATEST: ghcr.io/${{ github.repository }}:latest
+
+jobs:
+  # ── Chainloop attestation: init ───────────────────────────────────────────────
+  # Start an attestation before the build. Use --remote-state so the attestation
+  # ID is stored server-side and can be referenced by downstream jobs via outputs.
+  attestation-init:
+    runs-on: ubuntu-latest
+    outputs:
+      attestation-id: ${{ steps.init.outputs.attestation-id }}
+    steps:
+      - name: Install Chainloop CLI
+        run: curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
+
+      - name: Initialize attestation
+        id: init
+        env:
+          CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
+        run: |
+          ATTESTATION_ID=$(chainloop attestation init \
+            --workflow "${{ secrets.CHAINLOOP_WORKFLOW }}" \
+            --remote-state \
+            -o json | jq -r '.id')
+          echo "Attestation ID: $ATTESTATION_ID"
+          echo "attestation-id=$ATTESTATION_ID" >> "$GITHUB_OUTPUT"
+
+  # ── Build and push container image ───────────────────────────────────────────
+  build-push:
+    runs-on: ubuntu-latest
+    needs: attestation-init
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_LATEST }}
+
+  # ── Chainloop attestation: add evidence and push ──────────────────────────────
+  attestation-push:
+    runs-on: ubuntu-latest
+    needs: [attestation-init, build-push]
+    steps:
+      - name: Install Chainloop CLI
+        run: curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
+
+      - name: Add container image evidence
+        env:
+          CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
+        run: |
+          chainloop attestation add \
+            --name container-image \
+            --value "ghcr.io/${{ github.repository }}:${{ github.sha }}" \
+            --attestation-id "${{ needs.attestation-init.outputs.attestation-id }}"
+
+      - name: Push attestation
+        env:
+          CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
+        run: |
+          chainloop attestation push \
+            --attestation-id "${{ needs.attestation-init.outputs.attestation-id }}"
