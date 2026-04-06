@@ -12,6 +12,10 @@ on:
       - develop
   workflow_dispatch:
 
+permissions:
+  contents: write   # To create/update GitHub releases
+  packages: write   # To push OCI image artifacts to GHCR
+
 jobs:
   publish-workshops:
     runs-on: ubuntu-latest
