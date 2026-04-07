@@ -32,7 +32,7 @@ spec:
         files:
           - path: .
             image:
-              url: $(image_repository)/chainloop:v1.89.8
+              url: ghcr.io/educates/educates-extension-packages/chainloop:v1.89.8
   session:
     namespaces:
       security:
