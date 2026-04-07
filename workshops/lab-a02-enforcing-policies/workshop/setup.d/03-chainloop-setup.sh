@@ -13,6 +13,7 @@ fi
 
 cat > /etc/profile.d/chainloop-env.sh <<EOF
 export CHAINLOOP_TOKEN="${CHAINLOOP_TOKEN}"
+export DO_NOT_TRACK=1
 EOF
 
 echo "Chainloop token configured."

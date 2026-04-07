@@ -27,6 +27,12 @@ spec:
     files:
     - image:
         url: "$(image_repository)/lab-a01-getting-started-with-chainloop-files:$(workshop_version)"
+    packages:
+      - name: chainloop
+        files:
+          - path: .
+            image:
+              url: $(image_repository)/chainloop:v1.89.8
   session:
     namespaces:
       security:
