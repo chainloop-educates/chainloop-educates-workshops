@@ -36,8 +36,8 @@ Several environment variables are pre-set in your terminal. Take a moment to con
 command: |-
   echo "Session namespace : $SESSION_NAMESPACE"
   echo "Chainloop token   : ${CHAINLOOP_TOKEN:0:8}... (truncated)"
-  echo "GitHub org        : $GITHUB_ORG"
-  echo "GitHub repo URL   : $GITHUB_REPO_URL"
+  echo "GitLab URL        : $GITLAB_URL"
+  echo "GitLab repo URL   : $GITLAB_REPO_URL"
 ```
 
 You will use `$SESSION_NAMESPACE` throughout this workshop to give your Chainloop resources unique names — this prevents naming collisions when multiple participants run the workshop at the same time.

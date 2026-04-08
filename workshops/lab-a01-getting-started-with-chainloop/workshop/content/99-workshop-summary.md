@@ -2,15 +2,15 @@
 title: Summary and Next Steps
 ---
 
-You have built a complete supply chain evidence pipeline from scratch. Every push to your GitHub repository now automatically produces a signed, tamper-proof attestation — a verifiable record of what was built, with a container image captured as evidence and stored in Chainloop where it cannot be altered.
+You have built a complete supply chain evidence pipeline from scratch. Every push to your GitLab repository now automatically produces a signed, tamper-proof attestation — a verifiable record of what was built, with a container image captured as evidence and stored in Chainloop where it cannot be altered.
 
 ## What You Built
 
-Starting from a plain GitHub Actions workflow that builds and pushes a container image, you added:
+Starting from a plain GitLab CI pipeline that builds and pushes a container image, you added:
 
 - A **workflow contract** that declares a container image as required evidence for every pipeline run
 - A **workflow** linked to that contract, giving Chainloop a governed view of this pipeline activity
-- Three **attestation jobs** in the pipeline (init → add → push) that automate the attestation lifecycle on every commit
+- Three **attestation jobs** in the GitLab CI pipeline (init → add → push) that automate the attestation lifecycle on every commit
 - A complete signed **attestation** with an immutable container image digest, queryable at any time from the Chainloop UI or CLI
 
 ## The Chainloop Model

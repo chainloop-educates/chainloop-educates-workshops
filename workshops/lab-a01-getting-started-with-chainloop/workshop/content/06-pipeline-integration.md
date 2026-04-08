@@ -2,14 +2,14 @@
 title: Integrating Chainloop into Your Pipeline
 ---
 
-The manual attestation showed you exactly what happens under the hood. Now automate it — add Chainloop attestation steps to the pre-populated GitHub Actions workflow so that every push automatically produces a signed attestation. You will add three jobs that mirror the three phases you ran manually: `attestation-init`, `build-push`, and `attestation-push`.
+The manual attestation showed you exactly what happens under the hood. Now automate it — add Chainloop attestation stages to the pre-populated GitLab CI pipeline so that every push automatically produces a signed attestation. You will add three jobs that mirror the three phases you ran manually: `attestation-init`, `build-push`, and `attestation-push`.
 
-## Part 1 — Clone the Repository and Explore the Existing Workflow
+## Part 1 — Clone the Repository and Explore the Existing Pipeline
 
-Clone the pre-populated GitHub repository into your exercises directory:
+Clone the pre-populated GitLab repository into your exercises directory:
 
 ```terminal:execute
-command: git clone "$GITHUB_REPO_URL_GIT" ~/exercises/chainloop-demo
+command: git clone "https://$GITLAB_USER:$GITLAB_PASSWORD@${GITLAB_REPO_URL_GIT#https://}" ~/exercises/chainloop-demo
 ```
 
 Move into the repository:
@@ -18,139 +18,130 @@ Move into the repository:
 command: cd ~/exercises/chainloop-demo
 ```
 
-Open the existing workflow file to see what the pipeline already does:
+Open the existing pipeline file to see what it already does:
 
 ```editor:open-file
-file: ~/exercises/chainloop-demo/.github/workflows/build.yml
+file: ~/exercises/chainloop-demo/.gitlab-ci.yml
 ```
 
-The workflow currently has a single job — `build-push` — that builds a container image and pushes it to the GitHub Container Registry (`ghcr.io`). There are no Chainloop steps yet — that is what you add in Parts 2 and 3.
+The pipeline currently has a single job — `build-push` — that builds a container image and pushes it to the GitLab Container Registry. There are no Chainloop steps yet — that is what you add in Parts 2 and 3.
 
-## Part 2 — Add the Chainloop Secrets to the Repository
+## Part 2 — Add the Chainloop Variables to the Pipeline
 
-The pipeline needs two repository secrets to work with Chainloop:
+The pipeline needs two CI/CD variables to work with Chainloop:
 
 - **`CHAINLOOP_TOKEN`** — authenticates the Chainloop CLI in pipeline jobs (the same token that is in your terminal session)
 - **`CHAINLOOP_WORKFLOW`** — the workflow name to attest against (your session-unique workflow name)
 
-Your terminal session is already authenticated to GitHub via `$GH_TOKEN`. Set both secrets with the `gh` CLI:
+Open the CI/CD settings page for your repository:
+
+```dashboard:open-url
+url: https://gitlab-gitlab.$(ingress_domain)/$(session_name)/chainloop-demo/-/settings/ci_cd
+```
+
+Scroll down to the **Variables** section and expand it. Add two variables:
+
+1. Click **Add variable**, set **Key** to `CHAINLOOP_TOKEN`, paste the value from your terminal (see below), check **Mask variable**, then click **Add variable**.
+2. Repeat for **Key** `CHAINLOOP_WORKFLOW` with the value shown below.
+
+Get both values from your terminal:
 
 ```terminal:execute
 command: |-
-  gh secret set CHAINLOOP_TOKEN \
-    --body "$CHAINLOOP_TOKEN" \
-    --repo "chainloop-educates/chainloop-demo"
+  echo "CHAINLOOP_TOKEN  : $CHAINLOOP_TOKEN"
+  echo "CHAINLOOP_WORKFLOW: $SESSION_NAMESPACE-demo"
 ```
 
-```terminal:execute
-command: |-
-  gh secret set CHAINLOOP_WORKFLOW \
-    --body "$SESSION_NAMESPACE-demo" \
-    --repo "chainloop-educates/chainloop-demo"
-```
-
-Confirm both secrets are listed on the repository:
-
-```terminal:execute
-command: gh secret list --repo "chainloop-educates/chainloop-demo"
-```
-
-You should see `CHAINLOOP_TOKEN` and `CHAINLOOP_WORKFLOW` in the output. The values are masked — GitHub never displays them after they are stored.
+Once saved, both variables will appear in the Variables list. Masked variables are never written to pipeline logs, even if a script step accidentally echoes them.
 
 {{< note >}}
-Repository secrets in GitHub Actions are encrypted at rest. They are exposed to workflow runs only as environment variables and are never written to logs, even if a script step accidentally echoes them.
+GitLab CI/CD variables set at the project level are available to all pipeline jobs as environment variables. You control visibility with the **Mask** and **Protect** flags — masked values are redacted in logs; protected variables are only available on protected branches.
 {{< /note >}}
 
-## Part 3 — Add Chainloop Attestation Jobs to the Workflow
+## Part 3 — Add Chainloop Attestation Jobs to the Pipeline
 
-The updated workflow needs three jobs. Replace the entire contents of `build.yml` with the version below, which adds the Chainloop attestation jobs while keeping the existing build job intact:
+The updated pipeline needs three stages and three jobs. Replace the entire contents of `.gitlab-ci.yml` with the version below, which adds the Chainloop attestation jobs while keeping the existing build job intact:
 
 ```editor:create-file
-file: ~/exercises/chainloop-demo/.github/workflows/build.yml
+file: ~/exercises/chainloop-demo/.gitlab-ci.yml
 text: |2
-  name: Build and Attest
+  # Build and Attest — Chainloop-integrated GitLab CI pipeline
 
-  on:
-    push:
-      branches: [main]
+  stages:
+    - attest-init
+    - build
+    - attest-push
 
-  env:
-    IMAGE_TAG: ghcr.io/${{ github.repository }}:${{ github.sha }}
-    IMAGE_LATEST: ghcr.io/${{ github.repository }}:latest
+  variables:
+    IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    IMAGE_LATEST: "$CI_REGISTRY_IMAGE:latest"
 
-  jobs:
-    # Chainloop attestation: init
-    attestation-init:
-      runs-on: ubuntu-latest
-      outputs:
-        attestation-id: ${{ steps.init.outputs.attestation-id }}
-      steps:
-        - name: Install Chainloop CLI
-          run: curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
-        - name: Initialize attestation
-          id: init
-          env:
-            CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
-          run: |
-            ATTESTATION_ID=$(chainloop attestation init \
-              --workflow "${{ secrets.CHAINLOOP_WORKFLOW }}" \
-              --remote-state \
-              -o json | jq -r '.id')
-            echo "attestation-id=$ATTESTATION_ID" >> "$GITHUB_OUTPUT"
+  # Chainloop attestation: init
+  attestation-init:
+    stage: attest-init
+    image: alpine:3
+    before_script:
+      - apk add --no-cache curl jq
+      - curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
+    script:
+      - |
+        ATTESTATION_ID=$(chainloop attestation init \
+          --workflow "$CHAINLOOP_WORKFLOW" \
+          --remote-state \
+          -o json | jq -r '.id')
+        echo "ATTESTATION_ID=$ATTESTATION_ID" >> attestation.env
+    artifacts:
+      reports:
+        dotenv: attestation.env
 
-    # Build and push container image
-    build-push:
-      runs-on: ubuntu-latest
-      needs: attestation-init
-      permissions:
-        contents: read
-        packages: write
-      steps:
-        - uses: actions/checkout@v4
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
-        - name: Build and push image
-          uses: docker/build-push-action@v5
-          with:
-            push: true
-            tags: |
-              ${{ env.IMAGE_TAG }}
-              ${{ env.IMAGE_LATEST }}
+  # Build and push container image
+  build-push:
+    stage: build
+    image: docker:24
+    services:
+      - docker:24-dind
+    variables:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_TLS_CERTDIR: "/certs"
+    needs:
+      - job: attestation-init
+        artifacts: true
+    before_script:
+      - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    script:
+      - docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" .
+      - docker push "$IMAGE_TAG"
+      - docker push "$IMAGE_LATEST"
 
-    # Chainloop attestation: add evidence and push
-    attestation-push:
-      runs-on: ubuntu-latest
-      needs: [attestation-init, build-push]
-      steps:
-        - name: Install Chainloop CLI
-          run: curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
-        - name: Add container image evidence
-          env:
-            CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
-          run: |
-            chainloop attestation add \
-              --name container-image \
-              --value "ghcr.io/${{ github.repository }}:${{ github.sha }}" \
-              --attestation-id "${{ needs.attestation-init.outputs.attestation-id }}"
-        - name: Push attestation
-          env:
-            CHAINLOOP_TOKEN: ${{ secrets.CHAINLOOP_TOKEN }}
-          run: |
-            chainloop attestation push \
-              --attestation-id "${{ needs.attestation-init.outputs.attestation-id }}"
+  # Chainloop attestation: add evidence and push
+  attestation-push:
+    stage: attest-push
+    image: alpine:3
+    needs:
+      - job: attestation-init
+        artifacts: true
+      - job: build-push
+    before_script:
+      - apk add --no-cache curl jq
+      - curl -sfL https://raw.githubusercontent.com/chainloop-dev/chainloop/main/extras/install.sh | sh -s -- --path /usr/local/bin
+    script:
+      - |
+        chainloop attestation add \
+          --name container-image \
+          --value "$IMAGE_TAG" \
+          --attestation-id "$ATTESTATION_ID"
+      - |
+        chainloop attestation push \
+          --attestation-id "$ATTESTATION_ID"
 ```
 
 ### How the Three Jobs Work Together
 
-- **`attestation-init`** runs first, before any build work. It starts the attestation server-side (via `--remote-state`) and writes the attestation ID to `$GITHUB_OUTPUT`, making it available to downstream jobs as a job output.
-- **`build-push`** runs after `attestation-init` (via `needs:`). It builds the container image and pushes it to `ghcr.io`. Docker is already available on `ubuntu-latest` runners — no `docker:dind` service needed.
-- **`attestation-push`** runs after both previous jobs complete. It adds the built image as evidence (using the attestation ID from job outputs), then signs and submits the completed attestation.
+- **`attestation-init`** runs first, before any build work. It starts the attestation server-side (via `--remote-state`) and writes the attestation ID to `attestation.env`. GitLab's `artifacts:reports:dotenv` mechanism makes this file available as environment variables to downstream jobs.
+- **`build-push`** runs after `attestation-init` (via `needs:`). It builds the container image and pushes it to the GitLab Container Registry using the built-in `$CI_REGISTRY_USER`, `$CI_JOB_TOKEN`, and `$CI_REGISTRY` variables — no manual credentials needed.
+- **`attestation-push`** runs after both previous jobs complete. It adds the built image as evidence (using the attestation ID from the dotenv artifact), then signs and submits the completed attestation.
 
-The job output mechanism (`$GITHUB_OUTPUT`) is how GitHub Actions passes values between jobs — it replaces the dotenv artifact pattern used in other CI systems.
+The `artifacts:reports:dotenv` mechanism is how GitLab CI passes values between jobs — it exports variables from a file in one job and injects them as environment variables into downstream jobs that declare `artifacts: true` in their `needs:` entry.
 
 {{< note >}}
 Each job installs the Chainloop CLI at runtime using the official install script. In a production pipeline you would use a custom runner image with the Chainloop CLI pre-installed, eliminating the install step from every job.
@@ -158,25 +149,25 @@ Each job installs the Chainloop CLI at runtime using the official install script
 
 ## Part 4 — Commit, Push, and Watch
 
-Commit the updated workflow file and push it to GitHub to trigger a run:
+Commit the updated pipeline file and push it to GitLab to trigger a run:
 
 ```terminal:execute
 command: |-
   cd ~/exercises/chainloop-demo && \
-  git add .github/workflows/build.yml && \
+  git add .gitlab-ci.yml && \
   git commit -m "Add Chainloop attestation to pipeline" && \
-  git push
+  git push "https://$GITLAB_USER:$GITLAB_PASSWORD@${GITLAB_REPO_URL_GIT#https://}" HEAD:main
 ```
 
-Switch to GitHub to watch the workflow execute:
+Switch to GitLab to watch the pipeline execute:
 
 ```dashboard:open-url
-url: https://github.com/chainloop-educates/chainloop-demo/actions
+url: https://gitlab-gitlab.$(ingress_domain)/$(session_name)/chainloop-demo/-/pipelines
 ```
 
-You should see the `Build and Attest` workflow appear. Once it starts, click into it to see the three jobs running in sequence — `attestation-init`, then `build-push`, then `attestation-push`.
+You should see a new pipeline appear. Once it starts, click into it to see the three jobs running in sequence — `attestation-init`, then `build-push`, then `attestation-push`.
 
-Once the workflow completes successfully, switch to Chainloop to see the new attestation:
+Once the pipeline completes successfully, switch to Chainloop to see the new attestation:
 
 ```dashboard:open-url
 url: https://app.chainloop.dev/u/educates
@@ -194,6 +185,6 @@ Chainloop records the container image digest, not just the tag. Tags are mutable
 
 ## What You Have Achieved
 
-Your GitHub Actions workflow now automatically produces a signed, tamper-proof attestation on every push. The three-job pattern — init before the build, add evidence after the build, push in a final job — can be extended with additional `attestation add` steps for each new material type you add to the contract.
+Your GitLab CI pipeline now automatically produces a signed, tamper-proof attestation on every push. The three-job pattern — init before the build, add evidence after the build, push in a final job — can be extended with additional `attestation add` steps for each new material type you add to the contract.
 
 Head to the summary page to review what you built and preview what comes next.

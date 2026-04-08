@@ -90,4 +90,4 @@ You have just run the complete Chainloop attestation lifecycle manually:
 2. `add` — attached a container image as evidence
 3. `push` — signed and submitted the tamper-proof record
 
-The next page shows you how to embed these exact same three steps into your GitHub Actions workflow so they run automatically on every push.
+The next page shows you how to embed these exact same three steps into your GitLab CI pipeline so they run automatically on every push.

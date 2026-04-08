@@ -6,7 +6,7 @@ Modern CI pipelines build software reliably — but they leave almost no verifia
 
 ## What You Will Build
 
-By the end of this workshop, your GitHub Actions pipeline will automatically produce a **signed attestation** on every run. The attestation captures a container image reference as material evidence and pushes it to Chainloop, where it is stored, queryable, and verifiable. You will have gone from zero to a working supply chain security foundation in a single session.
+By the end of this workshop, your GitLab CI pipeline will automatically produce a **signed attestation** on every run. The attestation captures a container image reference as material evidence and pushes it to Chainloop, where it is stored, queryable, and verifiable. You will have gone from zero to a working supply chain security foundation in a single session.
 
 ## Learning Objectives
 
@@ -16,7 +16,7 @@ After completing this workshop you will be able to:
 - Authenticate the Chainloop CLI against a hosted Chainloop instance
 - Create a workflow and a workflow contract that specifies required evidence
 - Run an attestation manually via the CLI using the init → add → push lifecycle
-- Integrate Chainloop attestation steps into an existing GitHub Actions pipeline
+- Integrate Chainloop attestation steps into an existing GitLab CI pipeline
 - Observe collected evidence and attestation details in the Chainloop UI
 
 ## Two Chainloop Instances
@@ -36,6 +36,6 @@ The workshop moves through five stages:
 2. **CLI setup** — verify the pre-installed CLI and confirm your session token works
 3. **Workflow and contract** — create the governance objects that define what evidence to collect
 4. **Manual attestation** — run the init → add → push lifecycle by hand to understand it fully
-5. **Pipeline integration** — automate attestation in your GitHub Actions pipeline
+5. **Pipeline integration** — automate attestation in your GitLab CI pipeline
 
 Let's get started.

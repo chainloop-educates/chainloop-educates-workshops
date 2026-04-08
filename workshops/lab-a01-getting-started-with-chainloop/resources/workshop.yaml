@@ -6,8 +6,8 @@ spec:
   title: Getting Started with Chainloop
   description: >-
     Install the Chainloop CLI, create a workflow and contract, run your first
-    attestation manually, and integrate Chainloop attestation into a GitHub
-    Actions pipeline.
+    attestation manually, and integrate Chainloop attestation into a GitLab CI
+    pipeline.
   duration: 75m
   difficulty: intermediate
   publish:
@@ -45,15 +45,18 @@ spec:
       editor:
         enabled: true
     objects:
-      # GitHub PATs — used by 02-github-env.sh to create and populate the repo
-      # admin-pat: needs repo + delete_repo scopes on the chainloop-educates org
-      # user-pat:  needs repo scope (used by learners to push commits)
-      # For this PoC both can be the same PAT.
-      - kind: Secret
-        apiVersion: v1
+      - apiVersion: gitlab.operators.educates.dev/v1beta1
+        kind: GitLabUser
         metadata:
-          name: github-pats
-        type: Opaque
-        stringData:
-          admin-pat: "REPLACE_WITH_GITHUB_ADMIN_PAT"
-          user-pat: "REPLACE_WITH_GITHUB_USER_PAT"
+          name: $(session_name)
+        spec:
+          instanceRef: 
+            name: gitlab
+            namespace: educates-gitlab-operator
+          email: "$(session_name)@chainloop.dev"
+          password: "Chainloop123"
+          repositories:
+          - projectName: chainloop-demo
+            projectPath: chainloop-demo
+            importUrl: https://gitlab.com/chainloop-dev/integration-demo.git
+            visibility: public
