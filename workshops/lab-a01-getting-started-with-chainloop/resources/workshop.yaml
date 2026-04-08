@@ -54,7 +54,7 @@ spec:
             name: gitlab
             namespace: educates-gitlab-operator
           email: "$(session_name)@chainloop.dev"
-          password: "Chainloop123"
+          password: "P@ss123!"
           repositories:
           - projectName: chainloop-demo
             projectPath: chainloop-demo

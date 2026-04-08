@@ -36,7 +36,7 @@ The pipeline needs two CI/CD variables to work with Chainloop:
 Open the CI/CD settings page for your repository:
 
 ```dashboard:open-url
-url: https://gitlab-gitlab.$(ingress_domain)/$(session_name)/chainloop-demo/-/settings/ci_cd
+url: https://gitlab-gitlab.{{< param ingress_domain >}}/{{< param session_name >}}/chainloop-demo/-/settings/ci_cd
 ```
 
 Scroll down to the **Variables** section and expand it. Add two variables:
@@ -162,7 +162,7 @@ command: |-
 Switch to GitLab to watch the pipeline execute:
 
 ```dashboard:open-url
-url: https://gitlab-gitlab.$(ingress_domain)/$(session_name)/chainloop-demo/-/pipelines
+url: https://gitlab-gitlab.{{< param ingress_domain >}}/{{< param session_name >}}/chainloop-demo/-/pipelines
 ```
 
 You should see a new pipeline appear. Once it starts, click into it to see the three jobs running in sequence — `attestation-init`, then `build-push`, then `attestation-push`.
